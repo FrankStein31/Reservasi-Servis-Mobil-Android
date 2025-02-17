@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Konten Hiburan</string>
+    <string name="title_home">Home</string>
+    <string name="title_barcode">QR Code</string>
+    <string name="title_history">History</string>
+    <string name="title_profile">Profile</string>
+</resources>
