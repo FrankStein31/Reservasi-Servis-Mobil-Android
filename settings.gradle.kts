@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "reservasiservismobil"
+rootProject.name = "ReservasiServisMobilAndroid"
 include(":app")

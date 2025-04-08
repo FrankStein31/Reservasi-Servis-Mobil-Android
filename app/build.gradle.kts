@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.android.reservasiservismobil"
-    compileSdk = 34
+    namespace = "com.android.reservasiservismobilandroid"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.android.reservasiservismobil"
+        applicationId = "com.android.reservasiservismobilandroid"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -48,11 +48,21 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.volley)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-    implementation("com.google.zxing:core:3.4.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+
+    // Gson
+    implementation("com.google.code.gson:gson:2.8.9")
+
+    // Midtrans SDK
+    implementation("com.midtrans:uikit:2.0.0-SANDBOX")
 }
