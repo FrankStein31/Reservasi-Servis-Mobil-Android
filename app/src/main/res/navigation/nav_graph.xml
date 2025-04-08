@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.android.reservasiservismobilandroid.ui.home.HomeFragment"
+        android:label="Beranda" />
+
+    <fragment
+        android:id="@+id/navigation_vehicles"
+        android:name="com.android.reservasiservismobilandroid.ui.vehicles.VehiclesFragment"
+        android:label="Kendaraan" />
+
+    <fragment
+        android:id="@+id/navigation_reservations"
+        android:name="com.android.reservasiservismobilandroid.ui.reservations.ReservationsFragment"
+        android:label="Reservasi" />
+
+    <fragment
+        android:id="@+id/navigation_payments"
+        android:name="com.android.reservasiservismobilandroid.ui.payments.PaymentsFragment"
+        android:label="Pembayaran" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.android.reservasiservismobilandroid.ui.profile.ProfileFragment"
+        android:label="Profil" />
+
+</navigation> 
