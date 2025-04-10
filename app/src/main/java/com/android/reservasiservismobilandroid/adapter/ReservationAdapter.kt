@@ -2,6 +2,7 @@ package com.android.reservasiservismobilandroid.adapter
 
 import android.content.Intent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.android.reservasiservismobilandroid.ReservationDetailActivity
@@ -10,7 +11,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class ReservationAdapter(
-    private val reservations: List<Map<String, Any>>
+    private val reservations: List<Map<String, Any>>,
+    private val onCancelClick: (Int) -> Unit
 ) : RecyclerView.Adapter<ReservationAdapter.ReservationViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReservationViewHolder {
@@ -37,16 +39,21 @@ class ReservationAdapter(
                 date
             }
 
+            val status = reservation["service_status"]?.toString() ?: "Pending"
+
             binding.apply {
                 tvServiceDate.text = displayDate
                 tvVehicle.text = "${reservation["vehicle_name"]} (${reservation["plate_number"]})"
                 tvPackage.text = reservation["package_name"].toString()
-                tvStatus.text = when(reservation["service_status"]) {
+                tvStatus.text = when(status) {
                     "Pending" -> "Menunggu"
                     "Process" -> "Sedang Diproses"
                     "Finish" -> "Selesai"
                     else -> "Belum Diproses"
                 }
+
+                // Tampilkan tombol batalkan hanya jika status masih Pending/Menunggu
+                btnCancel.visibility = if (status == "Pending") View.VISIBLE else View.GONE
 
                 btnViewDetails.setOnClickListener {
                     val intent = Intent(itemView.context, ReservationDetailActivity::class.java)
@@ -71,8 +78,13 @@ class ReservationAdapter(
                     intent.putExtra("plate_number", reservation["plate_number"].toString())
                     intent.putExtra("package_name", reservation["package_name"].toString())
                     intent.putExtra("complaint", reservation["vehicle_complaint"].toString())
-                    intent.putExtra("status", reservation["service_status"].toString())
+                    intent.putExtra("status", status)
                     itemView.context.startActivity(intent)
+                }
+
+                btnCancel.setOnClickListener {
+                    val reservationId = (reservation["id"] as Double).toInt()
+                    onCancelClick(reservationId)
                 }
             }
         }
