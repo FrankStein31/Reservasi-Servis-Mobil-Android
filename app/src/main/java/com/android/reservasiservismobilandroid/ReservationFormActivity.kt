@@ -155,8 +155,13 @@ class ReservationFormActivity : AppCompatActivity() {
             override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
                 if (response.isSuccessful) {
                     val responseData = response.body()
-                    if (responseData?.get("status") == "success") {
-                        val data = responseData["data"] as? List<*>
+                    
+                    // Periksa status: bisa berupa Boolean 'true' atau String "success"
+                    val status = responseData?.get("status")
+                    val isSuccess = status == true || status == "success"
+                    
+                    if (isSuccess) {
+                        val data = responseData?.get("data") as? List<*>
                         if (data != null) {
                             packages.clear()
                             packages.addAll(data.filterIsInstance<Map<String, Any>>())

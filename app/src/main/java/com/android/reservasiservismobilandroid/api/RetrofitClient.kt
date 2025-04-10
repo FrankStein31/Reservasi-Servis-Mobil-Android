@@ -1,5 +1,6 @@
 package com.android.reservasiservismobilandroid.api
 
+import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -17,11 +18,16 @@ object RetrofitClient {
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
+        
+    // Buat GsonConverter yang lebih toleran terhadap JSON yang kurang sempurna
+    private val gson = GsonBuilder()
+        .setLenient()
+        .create()
 
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
     val apiService: ApiService = retrofit.create(ApiService::class.java)

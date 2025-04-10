@@ -163,6 +163,52 @@
 
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Tampilan untuk detail paket -->
+                    <LinearLayout
+                        android:id="@+id/packageDetailLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp"
+                        android:visibility="gone">
+                        
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Detail Paket:"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="8dp"/>
+                            
+                        <TextView
+                            android:id="@+id/tvPackageDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"/>
+                            
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Produk dalam paket:"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="8dp"/>
+                            
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvPackageProducts"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"/>
+                            
+                        <TextView
+                            android:id="@+id/tvTotalPrice"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Total: Rp0"
+                            android:textStyle="bold"
+                            android:gravity="end"
+                            android:layout_marginTop="8dp"
+                            android:textColor="@color/purple_500"/>
+                    </LinearLayout>
+
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>

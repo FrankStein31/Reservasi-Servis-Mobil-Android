@@ -79,23 +79,15 @@
                         android:id="@+id/tvPackage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="16dp"
                         android:textSize="16sp" />
 
                     <TextView
                         android:id="@+id/tvComplaint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="16dp"
                         android:textSize="16sp" />
-
-                    <TextView
-                        android:id="@+id/tvBill"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:textSize="16sp"
-                        android:visibility="gone" />
 
                     <TextView
                         android:id="@+id/tvStatus"
@@ -107,6 +99,97 @@
 
                 </LinearLayout>
 
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card untuk Produk/Komponen Paket Layanan -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/tvProductsTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Produk/Komponen Paket Layanan"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp"
+                        android:visibility="gone" />
+
+                    <!-- Header untuk tabel produk -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp"
+                        android:background="@color/purple_100">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="#"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="16dp"
+                            android:textSize="16sp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Nama"
+                            android:textStyle="bold"
+                            android:textSize="16sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Harga"
+                            android:textStyle="bold"
+                            android:textSize="16sp"/>
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvProducts"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#EEEEEE"
+                        android:layout_marginTop="8dp"/>
+
+                    <TextView
+                        android:id="@+id/tvProductsTotal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Total: Rp0"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:gravity="end"
+                        android:layout_marginTop="16dp"
+                        android:visibility="gone"/>
+
+                    <TextView
+                        android:id="@+id/tvBill"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>

@@ -2,11 +2,14 @@ package com.android.reservasiservismobilandroid
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.android.reservasiservismobilandroid.adapter.PackageProductAdapter
 import com.android.reservasiservismobilandroid.api.RetrofitClient
 import com.android.reservasiservismobilandroid.databinding.ActivityReservationDetailBinding
 import com.android.reservasiservismobilandroid.utils.SharedPrefs
@@ -25,7 +28,7 @@ class ReservationDetailActivity : AppCompatActivity() {
     private var reservationId: Int = -1
     private var serviceId: Int = -1
     private var bill: Double = 0.0
-    private var status: String = "Pending"
+    private val TAG = "ReservationDetail"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +44,6 @@ class ReservationDetailActivity : AppCompatActivity() {
         // Ambil data dari intent
         reservationId = intent.getIntExtra("reservation_id", -1)
         serviceId = intent.getIntExtra("service_id", -1)
-        status = intent.getStringExtra("status") ?: "Pending"
 
         if (reservationId != -1) {
             loadReservationDetail(reservationId)
@@ -76,100 +78,161 @@ class ReservationDetailActivity : AppCompatActivity() {
     }
 
     private fun displayReservationDetail(data: Map<*, *>) {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val displayFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-        val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+        try {
+            // Format tanggal
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val dateStr = data["reservation_date"]?.toString() ?: ""
+            val date = dateFormat.parse(dateStr)
+            val formattedDate = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(date ?: dateStr)
 
-        val date = data["reservation_date"]?.toString() ?: ""
-        val displayDate = try {
-            val dateObj = dateFormat.parse(date)
-            if (dateObj != null) displayFormat.format(dateObj) else date
-        } catch (e: Exception) {
-            date
-        }
+            // Format mata uang
+            val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+            currencyFormat.maximumFractionDigits = 0
 
-        status = data["service_status"]?.toString() ?: "Pending"
-        
-        // Ambil service_id jika ada
-        if (data["service_id"] != null) {
-            serviceId = when (val sid = data["service_id"]) {
-                is Double -> sid.toInt()
-                is Int -> sid
-                is String -> sid.toIntOrNull() ?: -1
-                else -> -1
+            // Ekstrak data paket dan produk dari package_detail
+            val packageDetailStr = data["package_detail"]?.toString() ?: "{}"
+            val packageDetail = JSONObject(packageDetailStr)
+            
+            val vehicleName = data["vehicle_name"]?.toString() ?: ""
+            val plateNumber = data["plate_number"]?.toString() ?: ""
+            val vehicleText = "$vehicleName ($plateNumber)"
+            
+            val packageName = data["package_name"]?.toString() ?: ""
+            
+            // Mengambil data produk dalam paket
+            val productsList = mutableListOf<Map<String, Any>>()
+            var totalBill = 0.0
+            
+            // Cek jika ada total price langsung
+            if (packageDetail.has("price")) {
+                totalBill = packageDetail.optDouble("price", 0.0)
             }
-        }
-
-        // Hitung bill dari package_detail
-        val packageDetail = data["package_detail"]?.toString()
-        if (!packageDetail.isNullOrEmpty()) {
-            try {
-                val packageDetailObj = JSONObject(packageDetail)
-                var totalPrice = 0.0
-                
-                // Cek apakah ada harga paket
-                if (packageDetailObj.has("price")) {
-                    totalPrice += packageDetailObj.getDouble("price")
-                }
-                
-                // Cek apakah ada produk
-                if (packageDetailObj.has("products")) {
-                    val productsStr = packageDetailObj.getString("products")
-                    val productPairs = productsStr.split(",")
-                    
-                    for (pair in productPairs) {
-                        val parts = pair.split(":")
-                        if (parts.size >= 3) {
-                            val price = parts[2].toDoubleOrNull() ?: 0.0
-                            totalPrice += price
+            
+            // Cek format products dalam package_detail
+            if (packageDetail.has("products")) {
+                try {
+                    // Coba parse sebagai array (format baru)
+                    val productsArray = packageDetail.optJSONArray("products")
+                    if (productsArray != null) {
+                        // Format baru: products adalah array objek
+                        for (i in 0 until productsArray.length()) {
+                            val product = productsArray.getJSONObject(i)
+                            val productId = product.optInt("id", 0)
+                            val productName = product.optString("name", "")
+                            val productPrice = product.optDouble("price", 0.0)
+                            
+                            productsList.add(mapOf(
+                                "id" to productId,
+                                "name" to productName,
+                                "price" to productPrice
+                            ))
+                            
+                            // Hitung total hanya jika belum ada price langsung
+                            if (totalBill == 0.0) {
+                                totalBill += productPrice
+                            }
+                        }
+                    } else {
+                        // Format lama: products adalah string
+                        val productsStr = packageDetail.getString("products")
+                        val productPairs = productsStr.split(",")
+                        
+                        for (pair in productPairs) {
+                            val parts = pair.split(":")
+                            if (parts.size >= 3) {
+                                val productId = parts[0]
+                                val productName = parts[1]
+                                val productPrice = parts[2].toDoubleOrNull() ?: 0.0
+                                
+                                productsList.add(mapOf(
+                                    "id" to productId,
+                                    "name" to productName,
+                                    "price" to productPrice
+                                ))
+                                
+                                // Hitung total hanya jika belum ada price langsung
+                                if (totalBill == 0.0) {
+                                    totalBill += productPrice
+                                }
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing products: ${e.message}")
                 }
-                
-                // Default 50K jika totalPrice masih 0
-                if (totalPrice == 0.0) {
-                    totalPrice = 50000.0
-                }
-                
-                bill = totalPrice
-                binding.tvBill.text = "Total Biaya: ${currencyFormat.format(bill)}"
-                binding.tvBill.visibility = View.VISIBLE
-            } catch (e: Exception) {
-                // Default jika terjadi error dalam parsing
-                bill = 50000.0
-                binding.tvBill.text = "Total Biaya: ${currencyFormat.format(bill)}"
-                binding.tvBill.visibility = View.VISIBLE
             }
-        } else {
-            // Default jika tidak ada package_detail
-            bill = 50000.0
-            binding.tvBill.text = "Total Biaya: ${currencyFormat.format(bill)}"
-            binding.tvBill.visibility = View.VISIBLE
-        }
-
-        binding.tvServiceDate.text = "Tanggal Servis: $displayDate"
-        binding.tvTime.text = "Waktu: ${data["reservation_time"]}"
-        binding.tvVehicle.text = "Kendaraan: ${data["vehicle_name"]} (${data["plate_number"]})"
-        binding.tvPackage.text = "Paket: ${data["package_name"]}"
-        binding.tvComplaint.text = "Keluhan: ${data["vehicle_complaint"] ?: "-"}"
-        binding.tvStatus.text = "Status: ${when(status) {
-            "Pending" -> "Menunggu"
-            "Process" -> "Sedang Diproses"
-            "Finish" -> "Selesai"
-            "Paid" -> "Sudah Dibayar"
-            else -> status
-        }}"
-
-        updateUIBasedOnStatus()
-    }
-
-    private fun updateUIBasedOnStatus() {
-        binding.apply {
-            // Tampilkan/sembunyikan tombol berdasarkan status
-            btnCancel.visibility = if (status == "Pending") View.VISIBLE else View.GONE
             
-            // Tombol bayar hanya muncul saat status "Finish"
-            btnPay.visibility = if (status == "Finish") View.VISIBLE else View.GONE
+            bill = totalBill
+            
+            // Update UI
+            binding.tvServiceDate.text = "Tanggal Servis: $formattedDate"
+            binding.tvTime.text = "Waktu: ${data["reservation_time"]}"
+            binding.tvVehicle.text = "Kendaraan: $vehicleText"
+            binding.tvPackage.text = "Paket: $packageName"
+            binding.tvComplaint.text = "Keluhan: ${data["vehicle_complaint"]}"
+            binding.tvBill.text = "Total Biaya: ${currencyFormat.format(totalBill)}"
+            binding.tvBill.visibility = View.VISIBLE
+            
+            val status = data["service_status"]?.toString() ?: "Pending"
+            binding.tvStatus.text = "Status: ${
+                when(status) {
+                    "Pending" -> "Menunggu"
+                    "Process" -> "Sedang Diproses"
+                    "Finish" -> "Selesai"
+                    "Paid" -> "Lunas"
+                    "Cancelled" -> "Dibatalkan"
+                    else -> status
+                }
+            }"
+
+            // Setup RecyclerView untuk produk
+            if (productsList.isNotEmpty()) {
+                binding.tvProductsTitle.visibility = View.VISIBLE
+                binding.rvProducts.visibility = View.VISIBLE
+                binding.rvProducts.layoutManager = LinearLayoutManager(this)
+                binding.rvProducts.adapter = PackageProductAdapter(productsList)
+                
+                // Tampilkan total
+                binding.tvProductsTotal.visibility = View.VISIBLE
+                binding.tvProductsTotal.text = "Total: ${currencyFormat.format(totalBill)}"
+            } else {
+                binding.tvProductsTitle.visibility = View.GONE
+                binding.rvProducts.visibility = View.GONE
+                binding.tvProductsTotal.visibility = View.GONE
+            }
+
+            // Set visibility berdasarkan status
+            when (status) {
+                "Pending" -> {
+                    binding.btnCancel.visibility = View.VISIBLE
+                    binding.btnPay.visibility = View.GONE
+                }
+                "Process" -> {
+                    binding.btnCancel.visibility = View.GONE
+                    binding.btnPay.visibility = View.GONE
+                }
+                "Finish" -> {
+                    binding.btnCancel.visibility = View.GONE
+                    binding.btnPay.visibility = View.VISIBLE
+                }
+                "Paid" -> {
+                    binding.btnCancel.visibility = View.GONE
+                    binding.btnPay.visibility = View.GONE
+                }
+                "Cancelled" -> {
+                    binding.btnCancel.visibility = View.GONE
+                    binding.btnPay.visibility = View.GONE
+                }
+                else -> {
+                    binding.btnCancel.visibility = View.VISIBLE
+                    binding.btnPay.visibility = View.GONE
+                }
+            }
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Error displaying reservation: ${e.message}")
+            e.printStackTrace()
         }
     }
 
