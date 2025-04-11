@@ -2,6 +2,7 @@ package com.android.reservasiservismobilandroid
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -10,12 +11,6 @@ import com.android.reservasiservismobilandroid.databinding.ActivityPaymentFormBi
 import com.android.reservasiservismobilandroid.utils.SharedPrefs
 import com.midtrans.sdk.corekit.callback.TransactionFinishedCallback
 import com.midtrans.sdk.corekit.core.MidtransSDK
-import com.midtrans.sdk.corekit.core.TransactionRequest
-import com.midtrans.sdk.corekit.core.themes.CustomColorTheme
-import com.midtrans.sdk.corekit.models.BillingAddress
-import com.midtrans.sdk.corekit.models.CustomerDetails
-import com.midtrans.sdk.corekit.models.ItemDetails
-import com.midtrans.sdk.corekit.models.ShippingAddress
 import com.midtrans.sdk.corekit.models.snap.TransactionResult
 import com.midtrans.sdk.uikit.SdkUIFlowBuilder
 import retrofit2.Call
@@ -30,9 +25,6 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
     private lateinit var sharedPrefs: SharedPrefs
     private var serviceId: Int = 0
     private var bill: Double = 0.0
-    private var packagePrice: Double = 0.0
-    private var serviceFee: Double = 50000.0
-    private var isLoading: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,9 +37,6 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
 
         sharedPrefs = SharedPrefs(this)
 
-        // Set up Midtrans SDK
-        initMidtransSDK()
-
         // Get data from intent
         serviceId = intent.getIntExtra("service_id", 0)
         bill = intent.getDoubleExtra("bill", 0.0)
@@ -58,6 +47,9 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
             return
         }
         
+        // Inisialisasi Midtrans SDK
+        initMidtransSdk()
+        
         // Set up button click
         binding.btnPay.setOnClickListener {
             createPayment()
@@ -67,15 +59,25 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
         getPaymentDetails()
     }
 
-    private fun initMidtransSDK() {
-        SdkUIFlowBuilder.init()
-            .setClientKey("SB-Mid-client-zcwBqnfkJXTUkl5i")
-            .setContext(this)
-            .setTransactionFinishedCallback(this)
-            .setMerchantBaseUrl("https://api.sandbox.midtrans.com")
-            .enableLog(true)
-            .setColorTheme(CustomColorTheme("#6200EE", "#3700B3", "#BB86FC"))
-            .buildSDK()
+    private fun initMidtransSdk() {
+        try {
+            val clientKey = "SB-Mid-client-CGmzPqJNEWcIRSj7"
+            val baseUrl = "http://192.168.0.56/api_reservasiservismobil/api_android/midtrans_callback.php/"
+            
+            SdkUIFlowBuilder.init()
+                .setContext(this)
+                .setClientKey(clientKey)
+                .setTransactionFinishedCallback(this)
+                .setMerchantBaseUrl(baseUrl)
+                .enableLog(true)
+                .buildSDK()
+                
+            Log.d("Midtrans", "SDK Initialized Successfully")
+        } catch (e: Exception) {
+            Log.e("Midtrans", "Error initializing SDK: ${e.message}")
+            e.printStackTrace()
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun getPaymentDetails() {
@@ -88,64 +90,44 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
                 
                 if (response.isSuccessful) {
                     val responseBody = response.body()
+                    
                     when (responseBody?.get("status")) {
                         "success" -> {
-                            // Pembayaran sudah dilakukan
-                            Toast.makeText(this@PaymentFormActivity, "Pembayaran sudah dilakukan sebelumnya", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PaymentFormActivity, "Pembayaran sudah dilakukan", Toast.LENGTH_SHORT).show()
                             finish()
                         }
                         "ready" -> {
-                            // Data pembayaran siap, bisa langsung bayar
                             binding.contentLayout.visibility = View.VISIBLE
                             binding.btnPay.isEnabled = true
                             binding.messageText.text = "Data pembayaran siap"
                             
                             val data = responseBody["data"] as? Map<*, *>
                             if (data != null && data.containsKey("bill")) {
-                                bill = when (val billValue = data["bill"]) {
-                                    is Int -> billValue.toDouble()
-                                    is Double -> billValue
-                                    is String -> billValue.toDoubleOrNull() ?: bill
-                                    else -> bill
+                                when (val billValue = data["bill"]) {
+                                    is Int -> bill = billValue.toDouble()
+                                    is Double -> bill = billValue
+                                    is String -> bill = billValue.toDoubleOrNull() ?: bill
                                 }
                                 
-                                if (bill > 0) {
-                                    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-                                    binding.tvBill.text = "Total Tagihan: ${currencyFormat.format(bill)}"
-                                }
+                                val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+                                binding.tvBill.text = "Total: ${currencyFormat.format(bill)}"
                             }
                         }
                         "pending" -> {
-                            // Belum bisa bayar
                             binding.contentLayout.visibility = View.VISIBLE
                             binding.btnPay.isEnabled = false
-                            binding.messageText.text = responseBody["message"] as? String ?: "Pembayaran belum dapat diproses"
-                            
-                            val data = responseBody["data"] as? Map<*, *>
-                            if (data != null && data.containsKey("bill")) {
-                                bill = when (val billValue = data["bill"]) {
-                                    is Int -> billValue.toDouble()
-                                    is Double -> billValue
-                                    is String -> billValue.toDoubleOrNull() ?: bill
-                                    else -> bill
-                                }
-                                
-                                if (bill > 0) {
-                                    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-                                    binding.tvBill.text = "Total Tagihan: ${currencyFormat.format(bill)}"
-                                }
-                            }
+                            binding.messageText.text = "Pembayaran belum dapat diproses"
                         }
                         else -> {
                             binding.contentLayout.visibility = View.VISIBLE
                             binding.btnPay.isEnabled = false
-                            binding.messageText.text = responseBody?.get("message") as? String ?: "Gagal memuat data pembayaran"
+                            binding.messageText.text = "Gagal memuat data"
                         }
                     }
                 } else {
                     binding.contentLayout.visibility = View.VISIBLE
                     binding.btnPay.isEnabled = false
-                    binding.messageText.text = "Gagal memuat data pembayaran"
+                    binding.messageText.text = "Gagal memuat data"
                 }
             }
             
@@ -153,74 +135,84 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
                 binding.progressBar.visibility = View.GONE
                 binding.contentLayout.visibility = View.VISIBLE
                 binding.btnPay.isEnabled = false
-                binding.messageText.text = "Error: ${t.message}"
+                binding.messageText.text = "Error koneksi"
+                Log.e("Payment", "Error: ${t.message}")
             }
         })
     }
 
     private fun createPayment() {
+        val payment = HashMap<String, String>()
+        payment["service_id"] = serviceId.toString()
+        payment["bill"] = bill.toString()
+        payment["method"] = "Midtrans"
+        
         binding.progressBar.visibility = View.VISIBLE
         binding.btnPay.isEnabled = false
-        
-        val paymentData = mapOf(
-            "service_id" to serviceId.toString(),
-            "bill" to bill.toString(),
-            "method" to "Midtrans"
-        )
-        
-        RetrofitClient.apiService.createPayment(paymentData).enqueue(object : Callback<Map<String, Any>> {
+
+        RetrofitClient.apiService.createPayment(payment).enqueue(object : Callback<Map<String, Any>> {
             override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
                 binding.progressBar.visibility = View.GONE
                 binding.btnPay.isEnabled = true
-                
+
                 if (response.isSuccessful) {
-                    val responseBody = response.body()
-                    if (responseBody?.get("status") == "success") {
-                        val data = responseBody["data"] as? Map<*, *>
-                        if (data != null && data.containsKey("snap_token")) {
-                            val snapToken = data["snap_token"] as String
-                            MidtransSDK.getInstance().startPaymentUiFlow(this@PaymentFormActivity, snapToken)
+                    val responseData = response.body()
+                    Log.d("Payment", "Response: $responseData")
+                    
+                    if (responseData?.get("status") == "success") {
+                        val snapToken = responseData["snap_token"]?.toString()
+                        
+                        if (!snapToken.isNullOrEmpty()) {
+                            try {
+                                MidtransSDK.getInstance().startPaymentUiFlow(this@PaymentFormActivity, snapToken)
+                            } catch (e: Exception) {
+                                Log.e("Payment", "Error starting payment: ${e.message}")
+                                e.printStackTrace()
+                                Toast.makeText(this@PaymentFormActivity, "Error memulai pembayaran", Toast.LENGTH_SHORT).show()
+                            }
                         } else {
-                            Toast.makeText(this@PaymentFormActivity, "Snap token tidak ditemukan", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PaymentFormActivity, "Token kosong", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        Toast.makeText(this@PaymentFormActivity, responseBody?.get("message") as? String ?: "Gagal memproses pembayaran", Toast.LENGTH_SHORT).show()
+                        val message = responseData?.get("message")?.toString() ?: "Pembayaran gagal"
+                        Toast.makeText(this@PaymentFormActivity, message, Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(this@PaymentFormActivity, "Gagal memproses pembayaran", Toast.LENGTH_SHORT).show()
+                    try {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e("Payment", "Error: ${response.code()}, body: $errorBody")
+                    } catch (e: Exception) {
+                        Log.e("Payment", "Error parsing error body: ${e.message}")
+                    }
+                    Toast.makeText(this@PaymentFormActivity, "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             }
-            
+
             override fun onFailure(call: Call<Map<String, Any>>, t: Throwable) {
                 binding.progressBar.visibility = View.GONE
                 binding.btnPay.isEnabled = true
-                Toast.makeText(this@PaymentFormActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                Log.e("Payment", "Network error: ${t.message}")
+                Toast.makeText(this@PaymentFormActivity, "Error koneksi", Toast.LENGTH_SHORT).show()
             }
         })
     }
 
-    override fun onTransactionFinished(result: TransactionResult) {
-        if (result.response != null) {
-            when (result.status) {
-                TransactionResult.STATUS_SUCCESS -> {
-                    Toast.makeText(this, "Pembayaran Berhasil", Toast.LENGTH_LONG).show()
-                    setResult(RESULT_OK)
-                    finish()
-                }
-                TransactionResult.STATUS_PENDING -> {
-                    Toast.makeText(this, "Pembayaran Tertunda, silahkan selesaikan dalam 24 jam", Toast.LENGTH_LONG).show()
-                    setResult(RESULT_OK)
-                    finish()
-                }
-                TransactionResult.STATUS_FAILED -> {
-                    Toast.makeText(this, "Pembayaran Gagal: ${result.response.statusMessage}", Toast.LENGTH_LONG).show()
-                }
-                TransactionResult.STATUS_INVALID -> {
-                    Toast.makeText(this, "Pembayaran Tidak Valid", Toast.LENGTH_LONG).show()
-                }
+    override fun onTransactionFinished(result: TransactionResult?) {
+        when (result?.status) {
+            TransactionResult.STATUS_SUCCESS -> {
+                Toast.makeText(this, "Pembayaran Berhasil!", Toast.LENGTH_LONG).show()
+                finish()
             }
-        } else {
-            Toast.makeText(this, "Pembayaran Dibatalkan", Toast.LENGTH_LONG).show()
+            TransactionResult.STATUS_PENDING -> {
+                Toast.makeText(this, "Pembayaran dalam proses", Toast.LENGTH_LONG).show()
+                finish()
+            }
+            TransactionResult.STATUS_FAILED -> {
+                Toast.makeText(this, "Pembayaran Gagal", Toast.LENGTH_LONG).show()
+            }
+            else -> {
+                Toast.makeText(this, "Transaksi selesai", Toast.LENGTH_LONG).show()
+            }
         }
     }
 

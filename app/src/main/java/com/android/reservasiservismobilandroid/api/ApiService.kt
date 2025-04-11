@@ -49,7 +49,7 @@ interface ApiService {
     fun getPaymentDetail(@Query("service_id") serviceId: Int): Call<Map<String, Any>>
 
     @POST("payments.php")
-    fun createPayment(@Body payment: Map<String, Any>): Call<Map<String, Any>>
+    fun createPayment(@Body payment: Map<String, String>): Call<Map<String, Any>>
 
     @GET("profile.php")
     fun getProfile(@Query("id") customerId: Int): Call<Map<String, Any>>
