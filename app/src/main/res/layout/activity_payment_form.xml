@@ -60,6 +60,18 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvBill" />
+            
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCheckStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Cek Status Pembayaran"
+            android:textAllCaps="false"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnPay"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -55,6 +55,11 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
             createPayment()
         }
         
+        // Tambahkan tombol check status
+        binding.btnCheckStatus.setOnClickListener {
+            checkPaymentStatus()
+        }
+        
         // Get payment details
         getPaymentDetails()
     }
@@ -99,6 +104,8 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
                         "ready" -> {
                             binding.contentLayout.visibility = View.VISIBLE
                             binding.btnPay.isEnabled = true
+                            binding.btnPay.visibility = View.VISIBLE
+                            binding.btnCheckStatus.visibility = View.GONE
                             binding.messageText.text = "Data pembayaran siap"
                             
                             val data = responseBody["data"] as? Map<*, *>
@@ -116,18 +123,24 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
                         "pending" -> {
                             binding.contentLayout.visibility = View.VISIBLE
                             binding.btnPay.isEnabled = false
-                            binding.messageText.text = "Pembayaran belum dapat diproses"
+                            binding.btnPay.visibility = View.GONE
+                            binding.btnCheckStatus.visibility = View.VISIBLE
+                            binding.messageText.text = "Pembayaran sedang diproses. Silakan cek status pembayaran."
                         }
                         else -> {
                             binding.contentLayout.visibility = View.VISIBLE
                             binding.btnPay.isEnabled = false
-                            binding.messageText.text = "Gagal memuat data"
+                            binding.btnPay.visibility = View.GONE
+                            binding.btnCheckStatus.visibility = View.VISIBLE
+                            binding.messageText.text = "Gagal memuat data. Silakan cek status pembayaran."
                         }
                     }
                 } else {
                     binding.contentLayout.visibility = View.VISIBLE
                     binding.btnPay.isEnabled = false
-                    binding.messageText.text = "Gagal memuat data"
+                    binding.btnPay.visibility = View.GONE
+                    binding.btnCheckStatus.visibility = View.VISIBLE
+                    binding.messageText.text = "Gagal memuat data. Silakan cek status pembayaran."
                 }
             }
             
@@ -197,6 +210,52 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
         })
     }
 
+    private fun checkPaymentStatus() {
+        if (serviceId <= 0) {
+            Toast.makeText(this, "ID Servis tidak valid", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        binding.progressBar.visibility = View.VISIBLE
+        binding.btnCheckStatus.isEnabled = false
+        
+        RetrofitClient.apiService.getPaymentDetail(serviceId).enqueue(object : Callback<Map<String, Any>> {
+            override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
+                binding.progressBar.visibility = View.GONE
+                binding.btnCheckStatus.isEnabled = true
+                
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    
+                    when (responseBody?.get("status")) {
+                        "success" -> {
+                            Toast.makeText(this@PaymentFormActivity, "Pembayaran sudah berhasil!", Toast.LENGTH_SHORT).show()
+                            // Refresh halaman detail sebelum kembali
+                            val intent = Intent()
+                            intent.putExtra("payment_completed", true)
+                            setResult(RESULT_OK, intent)
+                            finish()
+                        }
+                        "ready" -> {
+                            Toast.makeText(this@PaymentFormActivity, "Pembayaran belum diterima. Silakan cek kembali nanti.", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            Toast.makeText(this@PaymentFormActivity, "Status pembayaran: ${responseBody?.get("message")}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    Toast.makeText(this@PaymentFormActivity, "Gagal cek status: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            
+            override fun onFailure(call: Call<Map<String, Any>>, t: Throwable) {
+                binding.progressBar.visibility = View.GONE
+                binding.btnCheckStatus.isEnabled = true
+                Toast.makeText(this@PaymentFormActivity, "Error koneksi: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
     override fun onTransactionFinished(result: TransactionResult?) {
         when (result?.status) {
             TransactionResult.STATUS_SUCCESS -> {
@@ -210,8 +269,13 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
                 finish()
             }
             TransactionResult.STATUS_PENDING -> {
-                Toast.makeText(this, "Pembayaran dalam proses", Toast.LENGTH_LONG).show()
-                finish()
+                Toast.makeText(this, "Pembayaran dalam proses, silakan cek status pembayaran", Toast.LENGTH_LONG).show()
+                
+                // Tampilkan tombol check status dan sembunyikan tombol bayar
+                binding.btnPay.visibility = View.GONE
+                binding.btnCheckStatus.visibility = View.VISIBLE
+                
+                binding.messageText.text = "Pembayaran sedang diproses. Silakan klik tombol 'Cek Status Pembayaran' untuk memeriksa status pembayaran Anda."
             }
             TransactionResult.STATUS_FAILED -> {
                 Toast.makeText(this, "Pembayaran Gagal", Toast.LENGTH_LONG).show()
