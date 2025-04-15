@@ -272,6 +272,18 @@
                 app:iconGravity="textStart"
                 app:cornerRadius="8dp"/>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPrintPaymentPdf"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="16dp"
+                android:text="Cetak Bukti Pembayaran PDF"
+                android:padding="12dp"
+                app:cornerRadius="8dp"
+                app:icon="@android:drawable/ic_menu_save"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

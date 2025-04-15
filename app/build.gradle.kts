@@ -65,4 +65,8 @@ dependencies {
 
     // Midtrans SDK
     implementation("com.midtrans:uikit:2.0.0-SANDBOX")
+
+    // PDF Library
+    implementation("com.itextpdf:itextpdf:5.5.13.3")
+    implementation("androidx.core:core:1.10.1")
 }

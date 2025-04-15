@@ -20,6 +20,12 @@ import retrofit2.Response
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.net.Uri
+import com.android.reservasiservismobilandroid.utils.PdfGenerator
 
 class ReservationDetailActivity : AppCompatActivity() {
 
@@ -29,6 +35,10 @@ class ReservationDetailActivity : AppCompatActivity() {
     private var serviceId: Int = -1
     private var bill: Double = 0.0
     private val TAG = "ReservationDetail"
+    
+    private val STORAGE_PERMISSION_CODE = 101
+    private var reservationData: Map<*, *>? = null
+    private var productsList = mutableListOf<Map<String, Any>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +91,9 @@ class ReservationDetailActivity : AppCompatActivity() {
 
     private fun displayReservationDetail(data: Map<*, *>) {
         try {
+            // Simpan data untuk pembuatan PDF
+            reservationData = data
+            
             // Format tanggal
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val dateStr = data["reservation_date"]?.toString() ?: ""
@@ -102,7 +115,7 @@ class ReservationDetailActivity : AppCompatActivity() {
             val packageName = data["package_name"]?.toString() ?: ""
             
             // Mengambil data produk dalam paket
-            val productsList = mutableListOf<Map<String, Any>>()
+            productsList.clear()
             var totalBill = 0.0
             
             // Cek jika ada total price langsung
@@ -208,10 +221,12 @@ class ReservationDetailActivity : AppCompatActivity() {
                 "Pending" -> {
                     binding.btnCancel.visibility = View.VISIBLE
                     binding.btnPay.visibility = View.GONE
+                    binding.btnPrintPdf.visibility = View.GONE
                 }
                 "Process" -> {
                     binding.btnCancel.visibility = View.GONE
                     binding.btnPay.visibility = View.GONE
+                    binding.btnPrintPdf.visibility = View.VISIBLE
                 }
                 "Finish" -> {
                     binding.btnCancel.visibility = View.GONE
@@ -242,18 +257,24 @@ class ReservationDetailActivity : AppCompatActivity() {
                         Log.d(TAG, "No payment exists, showing pay button")
                         binding.btnPay.visibility = View.VISIBLE
                     }
+                    
+                    // Tampilkan tombol PDF jika sudah selesai
+                    binding.btnPrintPdf.visibility = View.VISIBLE
                 }
                 "Paid" -> {
                     binding.btnCancel.visibility = View.GONE
                     binding.btnPay.visibility = View.GONE
+                    binding.btnPrintPdf.visibility = View.VISIBLE
                 }
                 "Cancelled" -> {
                     binding.btnCancel.visibility = View.GONE
                     binding.btnPay.visibility = View.GONE
+                    binding.btnPrintPdf.visibility = View.GONE
                 }
                 else -> {
                     binding.btnCancel.visibility = View.VISIBLE
                     binding.btnPay.visibility = View.GONE
+                    binding.btnPrintPdf.visibility = View.GONE
                 }
             }
             
@@ -278,6 +299,14 @@ class ReservationDetailActivity : AppCompatActivity() {
 
         binding.btnCancel.setOnClickListener {
             showCancelConfirmationDialog()
+        }
+        
+        binding.btnPrintPdf.setOnClickListener {
+            if (checkStoragePermission()) {
+                generatePdf()
+            } else {
+                requestStoragePermission()
+            }
         }
     }
 
@@ -315,6 +344,93 @@ class ReservationDetailActivity : AppCompatActivity() {
                 Toast.makeText(this@ReservationDetailActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun generatePdf() {
+        if (reservationData == null) {
+            Toast.makeText(this, "Data reservasi tidak tersedia", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Show loading
+        val progressDialog = android.app.ProgressDialog(this)
+        progressDialog.setMessage("Membuat PDF...")
+        progressDialog.setCancelable(false)
+        progressDialog.show()
+        
+        try {
+            val pdfUri = PdfGenerator.createReservationPdf(
+                this,
+                reservationData as Map<String, Any?>,
+                productsList,
+                bill
+            )
+            
+            progressDialog.dismiss()
+            
+            if (pdfUri != null) {
+                showPdfActionDialog(pdfUri)
+            } else {
+                Toast.makeText(this, "Gagal membuat PDF", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            progressDialog.dismiss()
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Error generating PDF: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+    
+    private fun showPdfActionDialog(pdfUri: Uri) {
+        val options = arrayOf("Lihat PDF", "Bagikan PDF")
+        
+        AlertDialog.Builder(this)
+            .setTitle("PDF Berhasil Dibuat")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> PdfGenerator.viewPdf(this, pdfUri)
+                    1 -> PdfGenerator.sharePdf(this, pdfUri, "Bukti Reservasi Servis Mobil")
+                }
+            }
+            .setPositiveButton("Tutup", null)
+            .show()
+    }
+    
+    private fun checkStoragePermission(): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            true // Android 10+ menggunakan scoped storage
+        } else {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+    
+    private fun requestStoragePermission() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                STORAGE_PERMISSION_CODE
+            )
+        }
+    }
+    
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                generatePdf()
+            } else {
+                Toast.makeText(this, "Izin penyimpanan diperlukan untuk membuat PDF", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

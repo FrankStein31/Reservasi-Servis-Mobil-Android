@@ -216,6 +216,18 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPrintPdf"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cetak PDF"
+            android:padding="12dp"
+            app:cornerRadius="8dp"
+            app:icon="@android:drawable/ic_menu_save"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPay"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
