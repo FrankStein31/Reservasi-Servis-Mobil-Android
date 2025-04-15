@@ -63,6 +63,8 @@ class ReservationDetailActivity : AppCompatActivity() {
                     if (responseBody?.get("status") == "success") {
                         val data = responseBody["data"] as? Map<*, *>
                         if (data != null) {
+                            // Log semua data untuk debug
+                            Log.d(TAG, "API Response: $data")
                             displayReservationDetail(data)
                         }
                     } else {
@@ -213,7 +215,33 @@ class ReservationDetailActivity : AppCompatActivity() {
                 }
                 "Finish" -> {
                     binding.btnCancel.visibility = View.GONE
-                    binding.btnPay.visibility = View.VISIBLE
+                    
+                    // Cek apakah sudah ada pembayaran berdasarkan jumlah record di tabel payments
+                    val paymentExists = data["payment_exists"]
+                    val serviceId = data["service_id"]?.toString()
+                    
+                    Log.d(TAG, "Service ID: $serviceId, Payment Exists: $paymentExists (${paymentExists?.javaClass?.name})")
+                    
+                    // Konversi nilai ke integer untuk pengecekan yang lebih pasti
+                    val paymentCount = when (paymentExists) {
+                        is Int -> paymentExists
+                        is Long -> paymentExists.toInt()
+                        is Double -> paymentExists.toInt()
+                        is String -> paymentExists.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    
+                    Log.d(TAG, "Payment Count: $paymentCount")
+                    
+                    if (paymentCount > 0) {
+                        // Jika ada pembayaran (nilai > 0), sembunyikan tombol bayar
+                        Log.d(TAG, "Payment exists, hiding pay button")
+                        binding.btnPay.visibility = View.GONE
+                    } else {
+                        // Jika tidak ada pembayaran, tampilkan tombol bayar
+                        Log.d(TAG, "No payment exists, showing pay button")
+                        binding.btnPay.visibility = View.VISIBLE
+                    }
                 }
                 "Paid" -> {
                     binding.btnCancel.visibility = View.GONE
@@ -242,7 +270,7 @@ class ReservationDetailActivity : AppCompatActivity() {
                 val intent = Intent(this, PaymentFormActivity::class.java)
                 intent.putExtra("service_id", serviceId)
                 intent.putExtra("bill", bill)
-                startActivity(intent)
+                startActivityForResult(intent, PAYMENT_REQUEST_CODE)
             } else {
                 Toast.makeText(this, "Data pembayaran belum siap", Toast.LENGTH_SHORT).show()
             }
@@ -295,5 +323,20 @@ class ReservationDetailActivity : AppCompatActivity() {
             return true
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PAYMENT_REQUEST_CODE && resultCode == RESULT_OK) {
+            val paymentCompleted = data?.getBooleanExtra("payment_completed", false) ?: false
+            if (paymentCompleted) {
+                // Refresh halaman untuk memuat status terbaru
+                loadReservationDetail(reservationId)
+            }
+        }
+    }
+
+    companion object {
+        private const val PAYMENT_REQUEST_CODE = 100
     }
 } 

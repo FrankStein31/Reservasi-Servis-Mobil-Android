@@ -62,7 +62,7 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
     private fun initMidtransSdk() {
         try {
             val clientKey = "SB-Mid-client-CGmzPqJNEWcIRSj7"
-            val baseUrl = "http://192.168.0.56/api_reservasiservismobil/api_android/midtrans_callback.php/"
+            val baseUrl = "http://192.168.1.155/api_reservasiservismobil/api_android/midtrans_callback.php/"
             
             SdkUIFlowBuilder.init()
                 .setContext(this)
@@ -201,6 +201,12 @@ class PaymentFormActivity : AppCompatActivity(), TransactionFinishedCallback {
         when (result?.status) {
             TransactionResult.STATUS_SUCCESS -> {
                 Toast.makeText(this, "Pembayaran Berhasil!", Toast.LENGTH_LONG).show()
+                
+                // Refresh halaman detail sebelum kembali
+                val intent = Intent()
+                intent.putExtra("payment_completed", true)
+                setResult(RESULT_OK, intent)
+                
                 finish()
             }
             TransactionResult.STATUS_PENDING -> {

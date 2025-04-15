@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.0.56/api_reservasiservismobil/api_android/" // Localhost untuk emulator Android
+    private const val BASE_URL = "http://192.168.1.155/api_reservasiservismobil/api_android/" // ip lokal
 
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
