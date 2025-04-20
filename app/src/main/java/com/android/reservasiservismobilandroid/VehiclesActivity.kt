@@ -2,15 +2,12 @@ package com.android.reservasiservismobilandroid
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import com.android.reservasiservismobilandroid.adapter.VehicleAdapter
 import com.android.reservasiservismobilandroid.api.RetrofitClient
 import com.android.reservasiservismobilandroid.databinding.ActivityVehiclesBinding
-import com.android.reservasiservismobilandroid.databinding.ItemVehicleBinding
 import com.android.reservasiservismobilandroid.utils.SharedPrefs
 import retrofit2.Call
 import retrofit2.Callback
@@ -41,12 +38,25 @@ class VehiclesActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        adapter = VehicleAdapter(vehicles) { vehicle ->
-            // Edit vehicle
-            val intent = Intent(this, VehicleFormActivity::class.java)
-            intent.putExtra("vehicle_id", (vehicle["id"] as Double).toInt())
-            startActivity(intent)
-        }
+        adapter = VehicleAdapter(vehicles, 
+            onEditClick = { vehicle ->
+                // Edit vehicle
+                val intent = Intent(this, VehicleFormActivity::class.java)
+                intent.putExtra("vehicle_id", (vehicle["id"] as Double).toInt())
+                startActivity(intent)
+            },
+            onDeleteClick = { vehicle ->
+                // Show confirmation dialog before deleting
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Konfirmasi Hapus")
+                    .setMessage("Apakah Anda yakin ingin menghapus kendaraan ini?")
+                    .setPositiveButton("Ya") { _, _ ->
+                        deleteVehicle((vehicle["id"] as Double).toInt())
+                    }
+                    .setNegativeButton("Tidak", null)
+                    .show()
+            }
+        )
         binding.rvVehicles.apply {
             layoutManager = LinearLayoutManager(this@VehiclesActivity)
             adapter = this@VehiclesActivity.adapter
@@ -91,54 +101,50 @@ class VehiclesActivity : AppCompatActivity() {
         return true
     }
 
-    private inner class VehicleAdapter(
-        private val vehicles: List<Map<String, Any>>,
-        private val onEditClick: (Map<String, Any>) -> Unit
-    ) : RecyclerView.Adapter<VehicleAdapter.VehicleViewHolder>() {
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VehicleViewHolder {
-            val binding = ItemVehicleBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-            return VehicleViewHolder(binding)
-        }
-
-        override fun onBindViewHolder(holder: VehicleViewHolder, position: Int) {
-            holder.bind(vehicles[position])
-        }
-
-        override fun getItemCount() = vehicles.size
-
-        inner class VehicleViewHolder(private val binding: ItemVehicleBinding) : RecyclerView.ViewHolder(binding.root) {
-            fun bind(vehicle: Map<String, Any>) {
-                binding.apply {
-                    tvVehicleName.text = vehicle["name"].toString()
-                    tvVehicleBrand.text = vehicle["brand"].toString()
-                    tvPlateNumber.text = vehicle["plate_number"].toString()
-                    tvYear.text = vehicle["year"].toString()
-
-                    btnEdit.setOnClickListener { onEditClick(vehicle) }
-                    btnDelete.setOnClickListener {
-                        deleteVehicle((vehicle["id"] as Double).toInt())
-                    }
-                }
-            }
-        }
-    }
-
     private fun deleteVehicle(id: Int) {
+        // Tampilkan loading
+        val progressDialog = android.app.ProgressDialog(this)
+        progressDialog.setMessage("Menghapus kendaraan...")
+        progressDialog.setCancelable(false)
+        progressDialog.show()
+        
+        // Log untuk debugging
+        android.util.Log.d("VehiclesActivity", "Menghapus kendaraan dengan ID: $id")
+        
         RetrofitClient.apiService.deleteVehicle(mapOf(
             "id" to id.toString(),
             "customer_id" to sharedPrefs.getUserId().toString()
         )).enqueue(object : Callback<Map<String, Any>> {
             override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
+                progressDialog.dismiss()
+                
                 if (response.isSuccessful) {
-                    Toast.makeText(this@VehiclesActivity, "Kendaraan berhasil dihapus", Toast.LENGTH_SHORT).show()
-                    loadVehicles()
+                    val responseBody = response.body()
+                    android.util.Log.d("VehiclesActivity", "Response: $responseBody")
+                    
+                    if (responseBody?.get("status") == "success") {
+                        Toast.makeText(this@VehiclesActivity, "Kendaraan berhasil dihapus", Toast.LENGTH_SHORT).show()
+                        loadVehicles() // Refresh data
+                    } else {
+                        val message = responseBody?.get("message")?.toString() ?: "Gagal menghapus kendaraan"
+                        Toast.makeText(this@VehiclesActivity, message, Toast.LENGTH_SHORT).show()
+                        android.util.Log.e("VehiclesActivity", "Error: $message")
+                    }
                 } else {
-                    Toast.makeText(this@VehiclesActivity, "Gagal menghapus kendaraan", Toast.LENGTH_SHORT).show()
+                    try {
+                        val errorBody = response.errorBody()?.string()
+                        android.util.Log.e("VehiclesActivity", "Error: ${response.code()}, body: $errorBody")
+                        Toast.makeText(this@VehiclesActivity, "Gagal menghapus kendaraan: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        android.util.Log.e("VehiclesActivity", "Error parsing error body: ${e.message}")
+                        Toast.makeText(this@VehiclesActivity, "Gagal menghapus kendaraan", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
 
             override fun onFailure(call: Call<Map<String, Any>>, t: Throwable) {
+                progressDialog.dismiss()
+                android.util.Log.e("VehiclesActivity", "Network error: ${t.message}")
                 Toast.makeText(this@VehiclesActivity, "Terjadi kesalahan: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })

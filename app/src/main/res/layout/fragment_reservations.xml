@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/grey_light">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -13,7 +13,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
+            android:background="@color/primary"
             app:title="Reservasi Servis"
             app:titleTextColor="@android:color/white"/>
 
@@ -30,7 +30,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingHorizontal="8dp"
+            android:paddingHorizontal="16dp"
             android:paddingVertical="16dp"/>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
@@ -42,6 +42,7 @@
         android:layout_gravity="center"
         android:text="Belum ada reservasi"
         android:textSize="16sp"
+        android:textColor="@color/grey_dark"
         android:visibility="gone"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
@@ -52,7 +53,9 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:text="Reservasi Baru"
-        android:textAllCaps="false"
-        app:icon="@android:drawable/ic_input_add"/>
+        android:backgroundTint="@color/accent"
+        android:textColor="@color/white"
+        app:icon="@android:drawable/ic_input_add"
+        app:iconTint="@color/white"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout> 

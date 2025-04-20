@@ -23,6 +23,11 @@ class VehicleFormActivity : AppCompatActivity() {
         sharedPrefs = SharedPrefs(this)
         vehicleId = intent.getIntExtra("vehicle_id", -1).takeIf { it != -1 }
 
+        // Mengatur toolbar dan tombol kembali
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = if (vehicleId != null) "Edit Kendaraan" else "Tambah Kendaraan"
+
         if (vehicleId != null) {
             loadVehicle(vehicleId!!)
         }
@@ -116,5 +121,11 @@ class VehicleFormActivity : AppCompatActivity() {
                 Toast.makeText(this@VehicleFormActivity, "Terjadi kesalahan: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+    
+    // Menangani tombol kembali pada action bar
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return true
     }
 } 

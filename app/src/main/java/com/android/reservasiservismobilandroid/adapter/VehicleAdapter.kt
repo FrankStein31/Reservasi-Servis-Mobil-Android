@@ -7,7 +7,8 @@ import com.android.reservasiservismobilandroid.databinding.ItemVehicleBinding
 
 class VehicleAdapter(
     private val vehicles: List<Map<String, Any>>,
-    private val onEditClick: (Map<String, Any>) -> Unit
+    private val onEditClick: (Map<String, Any>) -> Unit,
+    private val onDeleteClick: (Map<String, Any>) -> Unit
 ) : RecyclerView.Adapter<VehicleAdapter.VehicleViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VehicleViewHolder {
@@ -34,7 +35,7 @@ class VehicleAdapter(
                 }
 
                 btnDelete.setOnClickListener {
-                    // Implementasi hapus kendaraan
+                    onDeleteClick(vehicle)
                 }
             }
         }

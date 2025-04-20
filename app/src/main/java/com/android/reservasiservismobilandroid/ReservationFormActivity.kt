@@ -35,6 +35,11 @@ class ReservationFormActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         sharedPrefs = SharedPrefs(this)
+        
+        // Mengatur toolbar dan tombol kembali
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Buat Reservasi"
 
         setupDatePicker()
         setupTimeSpinner()
@@ -255,6 +260,7 @@ class ReservationFormActivity : AppCompatActivity() {
         })
     }
 
+    // Menangani tombol kembali pada action bar
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
