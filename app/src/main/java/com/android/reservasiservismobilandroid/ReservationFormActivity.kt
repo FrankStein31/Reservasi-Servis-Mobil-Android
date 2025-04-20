@@ -17,6 +17,7 @@ import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.text.NumberFormat
 
 class ReservationFormActivity : AppCompatActivity() {
     private lateinit var binding: ActivityReservationFormBinding
@@ -201,6 +202,9 @@ class ReservationFormActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 -1
             }
+            
+            // Tampilkan detail paket ketika dipilih
+            showPackageDetail(packages[position])
         }
         
         // Select first package by default
@@ -215,7 +219,48 @@ class ReservationFormActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 -1
             }
+            
+            // Tampilkan detail paket pertama secara default
+            showPackageDetail(packages[0])
         }
+    }
+
+    private fun showPackageDetail(packageData: Map<String, Any>) {
+        // Ambil data produk dan detail paket
+        val description = packageData["description"]?.toString() ?: "-"
+        val products = (packageData["products"] as? List<*>)?.filterIsInstance<Map<String, Any>>() ?: emptyList()
+        val price = when (val priceVal = packageData["price"]) {
+            is Double -> priceVal
+            is Int -> priceVal.toDouble()
+            is String -> priceVal.toDoubleOrNull() ?: 0.0
+            else -> 0.0
+        }
+        
+        // Format harga sebagai mata uang Rupiah
+        val priceFormatted = NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(price)
+        
+        // Bangun string detail produk
+        val productDetails = StringBuilder()
+        products.forEachIndexed { index, product ->
+            val productName = product["name"]?.toString() ?: "-"
+            val productPrice = when (val productPriceVal = product["price"]) {
+                is Double -> productPriceVal
+                is Int -> productPriceVal.toDouble()
+                is String -> productPriceVal.toDoubleOrNull() ?: 0.0
+                else -> 0.0
+            }
+            val productPriceFormatted = NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(productPrice)
+            
+            productDetails.append("${index + 1}. $productName - $productPriceFormatted\n")
+        }
+        
+        // Tampilkan detail paket
+        binding.tvPackageDetail.text = description
+        binding.tvProductList.text = if (productDetails.isNotEmpty()) productDetails.toString() else "Tidak ada produk dalam paket ini"
+        binding.tvPackagePrice.text = "Total: $priceFormatted"
+        
+        // Tampilkan layout detail paket
+        binding.packageDetailLayout.visibility = View.VISIBLE
     }
 
     private fun createReservation() {
