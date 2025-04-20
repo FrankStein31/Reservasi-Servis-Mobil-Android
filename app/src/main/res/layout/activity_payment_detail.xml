@@ -262,17 +262,6 @@
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPrintPdf"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Cetak PDF"
-                android:textAllCaps="false"
-                android:padding="16dp"
-                app:icon="@drawable/ic_print"
-                app:iconGravity="textStart"
-                app:cornerRadius="8dp"/>
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPrintPaymentPdf"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

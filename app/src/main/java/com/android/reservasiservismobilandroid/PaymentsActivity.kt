@@ -56,10 +56,6 @@ class PaymentsActivity : AppCompatActivity() {
                 intent.putExtra("note", payment["note"]?.toString() ?: "-")
                 startActivity(intent)
             },
-            onPrintPdfClick = { payment ->
-                // TODO: Implement PDF print
-                Toast.makeText(this, "Fitur cetak PDF akan segera hadir", Toast.LENGTH_SHORT).show()
-            }
         )
         binding.rvPayments.apply {
             layoutManager = LinearLayoutManager(this@PaymentsActivity)
@@ -103,7 +99,6 @@ class PaymentsActivity : AppCompatActivity() {
     private inner class PaymentAdapter(
         private val payments: List<Map<String, Any>>,
         private val onViewDetailClick: (Map<String, Any>) -> Unit,
-        private val onPrintPdfClick: (Map<String, Any>) -> Unit
     ) : RecyclerView.Adapter<PaymentAdapter.PaymentViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PaymentViewHolder {
@@ -140,7 +135,6 @@ class PaymentsActivity : AppCompatActivity() {
                     tvStatus.text = "Status: Lunas"
 
                     btnViewDetails.setOnClickListener { onViewDetailClick(payment) }
-                    btnPrintPdf.setOnClickListener { onPrintPdfClick(payment) }
                 }
             }
         }

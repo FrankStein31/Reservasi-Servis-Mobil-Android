@@ -50,9 +50,6 @@ class PaymentAdapter(
                     onViewDetailClick(payment)
                 }
 
-                btnPrintPdf.setOnClickListener {
-                    // Implementasi cetak PDF
-                }
             }
         }
     }
