@@ -180,11 +180,11 @@ class ReservationDetailActivity : AppCompatActivity() {
             bill = totalBill
             
             // Update UI
-            binding.tvServiceDate.text = "Tanggal Servis: $formattedDate"
-            binding.tvTime.text = "Waktu: ${data["reservation_time"]}"
-            binding.tvVehicle.text = "Kendaraan: $vehicleText"
-            binding.tvPackage.text = "Paket: $packageName"
-            binding.tvComplaint.text = "Keluhan: ${data["vehicle_complaint"]}"
+            binding.tvServiceDate.text = "$formattedDate"
+            binding.tvTime.text = "${data["reservation_time"]}"
+            binding.tvVehicle.text = "$vehicleText"
+            binding.tvPackage.text = "$packageName"
+            binding.tvComplaint.text = "${data["vehicle_complaint"]}"
             binding.tvBill.text = "Total Biaya: ${currencyFormat.format(totalBill)}"
             binding.tvBill.visibility = View.VISIBLE
             
@@ -193,8 +193,8 @@ class ReservationDetailActivity : AppCompatActivity() {
                 when(status) {
                     "Pending" -> "Menunggu"
                     "Process" -> "Sedang Diproses"
-                    "Finish" -> "Selesai"
-                    "Paid" -> "Lunas"
+                    "Finish" -> "Selesai || Lunas"
+                    "Selesai" -> "Servis Selesai || Belum Bayar"
                     "Cancelled" -> "Dibatalkan"
                     else -> status
                 }
@@ -209,7 +209,7 @@ class ReservationDetailActivity : AppCompatActivity() {
                 
                 // Tampilkan total
                 binding.tvProductsTotal.visibility = View.VISIBLE
-                binding.tvProductsTotal.text = "Total: ${currencyFormat.format(totalBill)}"
+                binding.tvProductsTotal.text = "${currencyFormat.format(totalBill)}"
             } else {
                 binding.tvProductsTitle.visibility = View.GONE
                 binding.rvProducts.visibility = View.GONE
@@ -228,7 +228,7 @@ class ReservationDetailActivity : AppCompatActivity() {
                     binding.btnPay.visibility = View.GONE
                     binding.btnPrintPdf.visibility = View.VISIBLE
                 }
-                "Finish" -> {
+                "Selesai" -> {
                     binding.btnCancel.visibility = View.GONE
                     
                     // Cek apakah sudah ada pembayaran berdasarkan jumlah record di tabel payments
@@ -261,7 +261,7 @@ class ReservationDetailActivity : AppCompatActivity() {
                     // Tampilkan tombol PDF jika sudah selesai
                     binding.btnPrintPdf.visibility = View.VISIBLE
                 }
-                "Paid" -> {
+                "Finish" -> {
                     binding.btnCancel.visibility = View.GONE
                     binding.btnPay.visibility = View.GONE
                     binding.btnPrintPdf.visibility = View.VISIBLE

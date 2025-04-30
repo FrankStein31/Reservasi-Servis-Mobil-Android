@@ -201,7 +201,8 @@ class ReservationsActivity : AppCompatActivity() {
                     val serviceStatus = when(reservation["service_status"]) {
                         "Pending" -> "Menunggu"
                         "Process" -> "Sedang Diproses"
-                        "Finish" -> "Selesai"
+                        "Selesai" -> "Servis Selesai || Belum Bayar"
+                        "Finish" -> "Selesai || Lunas"
                         else -> "Belum Diproses"
                     }
                     tvStatus.text = "Status: $serviceStatus"

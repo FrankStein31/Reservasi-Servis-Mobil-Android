@@ -41,7 +41,7 @@ class PaymentAdapter(
             }
 
             binding.apply {
-                tvServiceDate.text = displayDate
+                tvServiceDate.text = "Tanggal Bayar : "+displayDate
                 tvBill.text = "Total: ${currencyFormat.format((payment["bill"] as Double).toInt())}"
                 tvPaymentMethod.text = "Metode: ${payment["method"]}"
                 tvStatus.text = "Status: Lunas"

@@ -319,8 +319,8 @@ class PdfGenerator {
             return when(status) {
                 "Pending" -> "Menunggu"
                 "Process" -> "Sedang Diproses"
-                "Finish" -> "Selesai"
-                "Paid" -> "Lunas"
+                "Finish" -> "Selesai || Lunas"
+                "Selesai" -> "Selesai || Belum Bayar"
                 "Cancelled" -> "Dibatalkan"
                 else -> status
             }

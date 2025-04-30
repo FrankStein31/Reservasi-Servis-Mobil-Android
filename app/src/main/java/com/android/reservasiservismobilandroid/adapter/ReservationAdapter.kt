@@ -42,13 +42,14 @@ class ReservationAdapter(
             val status = reservation["service_status"]?.toString() ?: "Pending"
 
             binding.apply {
-                tvServiceDate.text = displayDate
+                tvServiceDate.text = "Tanggal Servis : " + displayDate + " || " + reservation["reservation_time"].toString()
                 tvVehicle.text = "${reservation["vehicle_name"]} (${reservation["plate_number"]})"
                 tvPackage.text = reservation["package_name"].toString()
                 tvStatus.text = when(status) {
                     "Pending" -> "Menunggu"
                     "Process" -> "Sedang Diproses"
-                    "Finish" -> "Selesai"
+                    "Selesai" -> "Servis Selesai || Belum Bayar"
+                    "Finish" -> "Selesai || Lunas"
                     else -> "Belum Diproses"
                 }
 
